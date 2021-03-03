@@ -37,7 +37,7 @@ const Room = (props) => {
 	const roomID = props.match.params.roomID;
 
 	useEffect(() => {
-		// socket = io.connect(ENDPOINT);
+		// socket = io(ENDPOINT);
 		let checkRole = props.location.search.slice(6, 11);
 		setRole(checkRole);
 		socketRef.current = io.connect('/');
