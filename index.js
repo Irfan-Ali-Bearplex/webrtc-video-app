@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
+var path = require('path');
 var cors = require('cors');
 var app = express();
 
@@ -25,6 +26,15 @@ app.use(function (req, res, next) {
 app.get('/', (req, res) => {
 	res.status(200).send('Server is working!');
 });
+
+//Run the clients files
+if (process.env.NODE_ENV === 'production') {
+	app.use(express.static('client/build'));
+
+	app.get('*', (req, res) => {
+		res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
+	});
+}
 
 io.on('connection', (socket) => {
 	socket.on('join room', ({ roomID, checkRole }) => {
