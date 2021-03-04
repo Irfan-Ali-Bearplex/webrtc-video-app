@@ -3,8 +3,8 @@ import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import styled from 'styled-components';
 
-const ENDPOINT = 'http://localhost:5200/';
-let socket;
+// const ENDPOINT = 'http://localhost:5200/';
+// let socket;
 
 const StyledVideo = styled.video`
 	height: 40%;
