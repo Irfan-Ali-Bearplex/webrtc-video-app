@@ -3,8 +3,9 @@ import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import styled from 'styled-components';
 
-// const ENDPOINT = 'http://localhost:5200/';
-// let socket;
+const ENDPOINT = 'http://localhost:5200/';
+
+let socket;
 
 const StyledVideo = styled.video`
 	height: 40%;
@@ -37,11 +38,11 @@ const Room = (props) => {
 	const roomID = props.match.params.roomID;
 
 	useEffect(() => {
-		// socket = io(ENDPOINT);
+		socket = io(ENDPOINT);
 		let checkRole = props.location.search.slice(6, 11);
 		setRole(checkRole);
-		socketRef.current = io.connect('/');
-
+		// socket = io.connect(ENDPOINT);
+		console.log(socket);
 		navigator.mediaDevices
 			.getUserMedia({
 				video: videoConstraints,
@@ -52,13 +53,13 @@ const Room = (props) => {
 					userVideo.current.srcObject = stream;
 					console.log('Admin');
 				}
-				socketRef.current.emit('join room', { roomID, checkRole });
-				socketRef.current.on('all users', (users) => {
+				socket.emit('join room', { roomID, checkRole });
+				socket.on('all users', (users) => {
 					console.log('Users');
 					const peers = [];
 					users.forEach((user) => {
 						const peer = user.role
-							? createPeer(user.id, socketRef.current.id, stream)
+							? createPeer(user.id, socket.id, stream)
 							: [];
 						peer.user = user;
 						peersRef.current.push({
@@ -71,7 +72,7 @@ const Room = (props) => {
 					setPeers(peers);
 				});
 
-				socketRef.current.on('user joined', (payload) => {
+				socket.on('user joined', (payload) => {
 					payload.role = role ? role : 'guest';
 					const peer = addPeer(payload.signal, payload.callerID, stream);
 
@@ -82,12 +83,12 @@ const Room = (props) => {
 					setPeers((users) => [...users, peer]);
 				});
 
-				socketRef.current.on('receiving returned signal', (payload) => {
+				socket.on('receiving returned signal', (payload) => {
 					const item = peersRef.current.find((p) => p.peerID === payload.id);
 					item.peer.signal(payload.signal);
 				});
 			});
-	}, []);
+	}, [ENDPOINT, props.location.search]);
 
 	function createPeer(userToSignal, callerID, stream) {
 		const peer = new Peer({
@@ -97,7 +98,7 @@ const Room = (props) => {
 		});
 
 		peer.on('signal', (signal) => {
-			socketRef.current.emit('sending signal', {
+			socket.emit('sending signal', {
 				userToSignal,
 				callerID,
 				signal,
@@ -115,7 +116,7 @@ const Room = (props) => {
 		});
 
 		peer.on('signal', (signal) => {
-			socketRef.current.emit('returning signal', {
+			socket.emit('returning signal', {
 				signal,
 				callerID,
 			});

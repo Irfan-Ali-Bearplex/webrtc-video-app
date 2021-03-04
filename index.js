@@ -2,11 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 var path = require('path');
+const socket = require('socket.io');
 var cors = require('cors');
 var app = express();
 
 const server = http.createServer(app);
-const socket = require('socket.io');
 const io = socket(server);
 
 const users = {};
@@ -15,7 +15,7 @@ const socketToRoom = {};
 
 app.use(cors());
 app.use(function (req, res, next) {
-	res.header('Access-Control-Allow-Origin', 'http://localhost:3000/'); // update to match the domain you will make the request from
+	res.header('Access-Control-Allow-Origin', 'http://localhost:3000/');
 	res.header(
 		'Access-Control-Allow-Headers',
 		'Origin, X-Requested-With, Content-Type, Accept'
