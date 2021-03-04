@@ -1,6 +1,6 @@
 import React from 'react';
 import { v1 as uuid } from 'uuid';
-import io from 'socket.io-client';
+// import io from 'socket.io-client';
 
 const CreateRoom = (props) => {
 	function create() {

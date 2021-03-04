@@ -3,8 +3,8 @@ import io from 'socket.io-client';
 import Peer from 'simple-peer';
 import styled from 'styled-components';
 
-// const ENDPOINT = 'http://localhost:5200/';
-// let socket;
+const ENDPOINT = 'http://localhost:5200/';
+let socket;
 
 const StyledVideo = styled.video`
 	height: 40%;
@@ -18,7 +18,7 @@ const Video = (props) => {
 		props.peer.on('stream', (stream) => {
 			ref.current.srcObject = stream;
 		});
-	}, []);
+	}, [props]);
 
 	return <StyledVideo muted autoPlay playsInline ref={ref} />;
 };
@@ -31,34 +31,31 @@ const videoConstraints = {
 const Room = (props) => {
 	const [role, setRole] = useState('');
 	const [peers, setPeers] = useState([]);
-	const socketRef = useRef();
 	const userVideo = useRef();
 	const peersRef = useRef([]);
 	const roomID = props.match.params.roomID;
 
 	useEffect(() => {
-		// socket = io.connect(ENDPOINT);
+		socket = io(ENDPOINT);
 		let checkRole = props.location.search.slice(6, 11);
 		setRole(checkRole);
-		socketRef.current = io.connect('/');
-
 		navigator.mediaDevices
 			.getUserMedia({
 				video: videoConstraints,
 				audio: true,
 			})
 			.then((stream) => {
-				if (checkRole == 'admin') {
+				if (checkRole === 'admin') {
 					userVideo.current.srcObject = stream;
 					console.log('Admin');
 				}
-				socketRef.current.emit('join room', { roomID, checkRole });
-				socketRef.current.on('all users', (users) => {
+				socket.emit('join room', { roomID, checkRole });
+				socket.on('all users', (users) => {
 					console.log('Users');
 					const peers = [];
 					users.forEach((user) => {
 						const peer = user.role
-							? createPeer(user.id, socketRef.current.id, stream)
+							? createPeer(user.id, socket.id, stream)
 							: [];
 						peer.user = user;
 						peersRef.current.push({
@@ -71,7 +68,7 @@ const Room = (props) => {
 					setPeers(peers);
 				});
 
-				socketRef.current.on('user joined', (payload) => {
+				socket.on('user joined', (payload) => {
 					payload.role = role ? role : 'guest';
 					const peer = addPeer(payload.signal, payload.callerID, stream);
 
@@ -82,12 +79,12 @@ const Room = (props) => {
 					setPeers((users) => [...users, peer]);
 				});
 
-				socketRef.current.on('receiving returned signal', (payload) => {
+				socket.on('receiving returned signal', (payload) => {
 					const item = peersRef.current.find((p) => p.peerID === payload.id);
 					item.peer.signal(payload.signal);
 				});
 			});
-	}, []);
+	}, [ENDPOINT, props.location.search]);
 
 	function createPeer(userToSignal, callerID, stream) {
 		const peer = new Peer({
@@ -97,7 +94,7 @@ const Room = (props) => {
 		});
 
 		peer.on('signal', (signal) => {
-			socketRef.current.emit('sending signal', {
+			socket.emit('sending signal', {
 				userToSignal,
 				callerID,
 				signal,
@@ -115,7 +112,7 @@ const Room = (props) => {
 		});
 
 		peer.on('signal', (signal) => {
-			socketRef.current.emit('returning signal', {
+			socket.emit('returning signal', {
 				signal,
 				callerID,
 			});
@@ -134,14 +131,14 @@ const Room = (props) => {
 				) : (
 					<h6 className='LiveUser'>No User live yet!</h6>
 				)}
-				{role == 'admin' ? (
+				{role === 'admin' ? (
 					<StyledVideo ref={userVideo} autoPlay playsInline />
 				) : null}
 
-				{role == 'admin'
+				{role === 'admin'
 					? null
 					: peers.map((peer, index) => {
-							if (peer.user?.role == 'admin')
+							if (peer.user?.role === 'admin')
 								return <Video key={index} peer={peer} />;
 					  })}
 			</div>
