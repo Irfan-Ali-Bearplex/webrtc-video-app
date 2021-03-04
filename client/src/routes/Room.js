@@ -4,7 +4,6 @@ import Peer from 'simple-peer';
 import styled from 'styled-components';
 
 const ENDPOINT = 'http://localhost:5200/';
-
 let socket;
 
 const StyledVideo = styled.video`
@@ -19,7 +18,7 @@ const Video = (props) => {
 		props.peer.on('stream', (stream) => {
 			ref.current.srcObject = stream;
 		});
-	}, []);
+	}, [props]);
 
 	return <StyledVideo muted autoPlay playsInline ref={ref} />;
 };
@@ -32,7 +31,6 @@ const videoConstraints = {
 const Room = (props) => {
 	const [role, setRole] = useState('');
 	const [peers, setPeers] = useState([]);
-	const socketRef = useRef();
 	const userVideo = useRef();
 	const peersRef = useRef([]);
 	const roomID = props.match.params.roomID;
@@ -41,15 +39,13 @@ const Room = (props) => {
 		socket = io(ENDPOINT);
 		let checkRole = props.location.search.slice(6, 11);
 		setRole(checkRole);
-		// socket = io.connect(ENDPOINT);
-		console.log(socket);
 		navigator.mediaDevices
 			.getUserMedia({
 				video: videoConstraints,
 				audio: true,
 			})
 			.then((stream) => {
-				if (checkRole == 'admin') {
+				if (checkRole === 'admin') {
 					userVideo.current.srcObject = stream;
 					console.log('Admin');
 				}
@@ -135,14 +131,14 @@ const Room = (props) => {
 				) : (
 					<h6 className='LiveUser'>No User live yet!</h6>
 				)}
-				{role == 'admin' ? (
+				{role === 'admin' ? (
 					<StyledVideo ref={userVideo} autoPlay playsInline />
 				) : null}
 
-				{role == 'admin'
+				{role === 'admin'
 					? null
 					: peers.map((peer, index) => {
-							if (peer.user?.role == 'admin')
+							if (peer.user?.role === 'admin')
 								return <Video key={index} peer={peer} />;
 					  })}
 			</div>
